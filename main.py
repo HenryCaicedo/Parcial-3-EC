@@ -5,6 +5,8 @@ import moviepy.editor as mp
 from moviepy.editor import VideoFileClip
 from PIL import Image
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+import imageio
+import matplotlib.pyplot as plt
 
 
 dir_path = os.path.dirname(os.path.realpath('videp.mp4'))
@@ -66,7 +68,63 @@ def trimWav():
     print("Trimming audio file...")
     ffmpeg_extract_subclip("./Output/Original/audio.wav", 0, 1, targetname="./Output/Adapted/trimmed_audio.wav")
 
+
+def createTxt(num):
+    try:
+        if not os.path.exists('./Output/Adapted/bmp'):
+            os.makedirs('./Output/Adapted/bmp')
+    except OSError:
+        print ('Error: Creating directory of bmp')
+
+    try:
+        if not os.path.exists('./Output/Adapted/txt'):
+            os.makedirs('./Output/Adapted/txt')
+    except OSError:
+        print ('Error: Creating directory of txt')
+
+    dirpath = './Output/Adapted/'
+    print('current directory is: ' + dirpath)
+    foldername = 'bmp'
+    print('Directory name is : ' + foldername)
+
+    #2
+    imagen = imageio.imread ('./Output/Adapted/framesResized/frame'+num+'.jpg')
+    im0 = Image.fromarray(imagen)
+    im0 = im0.resize((320, 240),Image.ANTIALIAS)
+    imagen = np.asarray(im0,'uint8')
+    im1 = Image.fromarray(imagen)
+    im1 = im1.save('./Output/Adapted/bmp/frame'+num+'.bmp')
+
+    #3
+    print(imagen.shape)
+    red = imagen [:,:,0].flatten()
+    print(red.shape)
+    green = imagen [:,:,1].flatten()
+    print(green.shape)
+    blue = imagen [:,:,2].flatten()
+    print(blue.shape)
+
+    #4
+    azul = np.uint16(np.trunc((blue/255.0)*(2**5-1)))
+    verde = np.uint16(np.trunc((green/255.0)*(2**6-1))*(2**5))
+    rojo = np.uint16(np.trunc((red/255.0)*(2**5-1))*(2**11))
+    representacion = np.uint16(rojo+verde+azul)
+
+    #5
+    for i in range(20):
+        print("     .word  "+hex(representacion[i]))
+
+    f = open('./Output/Adapted/txt/frame'+num+'.txt',"w")
+    for i in range(len(representacion)):
+        f.write("     .word  "+hex(representacion[i])+"\n")
+    f.close()
+
+
+
 createFrames()
 createWav()
 resizeFrames()
 trimWav()
+
+for i in range(1,31):
+    createTxt(str(i))
